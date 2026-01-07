@@ -171,13 +171,8 @@ const App: React.FC = () => {
                     expired.forEach(e => {
                         const message = `Tracey, you took ${e.medication || 'your meds'} ${e.minutes || 'some'} minutes ago and now it's time to ${e.action}`;
                         
-                        // Fallback 1: Local Alert (Wakes most phones if app is even slightly active)
-                        try {
-                            alert(`⏰ REMINDER: ${message}`);
-                        } catch (e) {}
-
-                        // Fallback 2: Browser Notification
-                        if ('Notification' in window && Notification.permission === "granted") {
+                        if (Notification.permission === "granted") {
+                             // Attempt to show the banner
                              if ('serviceWorker' in navigator) {
                                  navigator.serviceWorker.ready.then(reg => {
                                      reg.showNotification("Health Assistant", { 
@@ -187,14 +182,19 @@ const App: React.FC = () => {
                                         tag: e.id,
                                         requireInteraction: true,
                                         vibrate: [200, 100, 200]
-                                     }).catch(err => console.error("Notification reg.show failed:", err));
-                                 }).catch(err => {
-                                     // Final fallback: Direct browser notification if SW ready fails
-                                     new Notification("Health Assistant", { body: message });
+                                     }).catch(() => {
+                                        // Fallback to basic notification if SW fails
+                                        new Notification("Health Assistant", { body: message, icon: '/vite.svg' });
+                                     });
                                  });
                              } else {
-                                 new Notification("Health Assistant", { body: message });
+                                 new Notification("Health Assistant", { body: message, icon: '/vite.svg' });
                              }
+                        } else {
+                            // ONLY alert if they haven't enabled notifications
+                            try {
+                                alert(`⏰ REMINDER: ${message}`);
+                            } catch (e) {}
                         }
                     });
                     return prev.filter(t => t.target > now);

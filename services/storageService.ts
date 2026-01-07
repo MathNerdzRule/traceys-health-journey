@@ -88,34 +88,38 @@ export const storageService = {
       const logs: DailyLogs = {};
       const meds: Medication[] = [];
       
-      // Basic check if it's our format
-      if (!text.includes('Health Log History') && !text.includes('Medication List')) return false;
+      // Support multiple variations of reports
+      const medsToken = text.includes('CURRENT ACTIVE MEDICATIONS') ? 'CURRENT ACTIVE MEDICATIONS' : 'Medication List';
+      const logsToken = text.includes('DAILY LOG HISTORY') ? 'DAILY LOG HISTORY' : 'Health Log History';
 
-      if (text.includes('Medication List')) {
-        const lines = text.split('\n');
+      if (!text.includes(medsToken) && !text.includes(logsToken)) return false;
+
+      if (text.includes(medsToken)) {
+        const afterMeds = text.split(medsToken)[1];
+        const medsBlock = afterMeds.split('=========================')[1]?.split('DAILY LOG HISTORY')[0]?.split('Health Log History')[0] || '';
+        const lines = medsBlock.split('\n');
         let currentMed: any = null;
         lines.forEach(line => {
-          if (line.startsWith('- ')) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('- ')) {
             if (currentMed) meds.push(currentMed);
-            currentMed = { id: Date.now().toString() + Math.random(), name: line.substring(2).trim(), dosage: '', frequency: '' };
-          } else if (line.includes('Dosage: ')) {
-            if (currentMed) currentMed.dosage = line.split('Dosage: ')[1].trim();
-          } else if (line.includes('Frequency: ')) {
-            if (currentMed) currentMed.frequency = line.split('Frequency: ')[1].trim();
+            currentMed = { id: Math.random().toString(36).substr(2, 9), name: trimmed.substring(2).trim(), dosage: '', frequency: '' };
+          } else if (trimmed.includes('Dosage: ')) {
+            if (currentMed) currentMed.dosage = trimmed.split('Dosage: ')[1].trim();
+          } else if (trimmed.includes('Frequency: ')) {
+            if (currentMed) currentMed.frequency = trimmed.split('Frequency: ')[1].trim();
           }
         });
         if (currentMed) meds.push(currentMed);
         if (meds.length > 0) storageService.saveMedications(meds);
       }
 
-      if (text.includes('Health Log History')) {
+      if (text.includes(logsToken)) {
         const daySections = text.split(/--- (.*?) ---/g);
-        // [0] is header, [1] is first date display string, [2] is content for [1], etc.
         for (let i = 1; i < daySections.length; i += 2) {
-          const displayDate = daySections[i];
+          const displayDate = daySections[i].trim();
           const content = daySections[i+1];
           
-          // Convert "Monday, January 6, 2026" back to "2026-01-06"
           const date = new Date(displayDate);
           if (isNaN(date.getTime())) continue;
           const dateStr = date.toISOString().split('T')[0];
@@ -124,7 +128,7 @@ export const storageService = {
           const typeGroups = content.split(/\[(.*?)\]/g);
           
           for (let j = 1; j < typeGroups.length; j += 2) {
-            const type = typeGroups[j] as LogType;
+            const type = typeGroups[j].trim() as LogType;
             const entriesText = typeGroups[j+1];
             const entries = entriesText.split('\n- ');
             
@@ -144,7 +148,10 @@ export const storageService = {
             logs[dateStr] = dailyEntries;
           }
         }
-        if (Object.keys(logs).length > 0) storageService.saveLogs(logs);
+        if (Object.keys(logs).length > 0) {
+            const currentLogs = storageService.getLogs();
+            storageService.saveLogs({ ...currentLogs, ...logs });
+        }
       }
       return true;
     } catch (err) {
