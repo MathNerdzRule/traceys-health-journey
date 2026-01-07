@@ -94,7 +94,7 @@ const App: React.FC = () => {
     const [remTime, setRemTime] = useState('30');
     const [remAction, setRemAction] = useState('Eat my meal');
     const [isSettingReminder, setIsSettingReminder] = useState(false);
-    const [activeTimers, setActiveTimers] = useState<{ id: string; target: number; action: string; medication: string }[]>(() => {
+    const [activeTimers, setActiveTimers] = useState<{ id: string; target: number; action: string; medication: string; minutes: number }[]>(() => {
         const saved = localStorage.getItem('active_health_timers');
         if (!saved) return [];
         const parsed = JSON.parse(saved);
@@ -112,23 +112,6 @@ const App: React.FC = () => {
         if ('Notification' in window) {
             const permission = await Notification.requestPermission();
             setNotificationPermission(permission);
-            if (permission === 'granted') {
-                // Register a test notification to confirm
-                new Notification("Notifications Enabled!", { body: "You will now receive health reminders." });
-            }
-        }
-    };
-
-    const sendTestNotification = () => {
-        if ('serviceWorker' in navigator && Notification.permission === 'granted') {
-            navigator.serviceWorker.ready.then(reg => {
-                reg.showNotification("Success! ✅", { 
-                    body: "Tracey, this is your health companion working locally on your device.",
-                    vibrate: [200, 100, 200]
-                });
-            });
-        } else {
-            requestNotificationPermission();
         }
     };
 
@@ -163,7 +146,7 @@ const App: React.FC = () => {
                         if ('serviceWorker' in navigator && Notification.permission === "granted") {
                              navigator.serviceWorker.ready.then(reg => {
                                  reg.showNotification("Health Assistant", { 
-                                    body: `Tracey, you took ${e.medication}. It's time to: ${e.action}`,
+                                    body: `Tracey, you took ${e.medication} ${e.minutes} minutes ago and now it's time to ${e.action}`,
                                     icon: '/vite.svg',
                                     badge: '/vite.svg',
                                     tag: e.id,
@@ -201,8 +184,9 @@ const App: React.FC = () => {
             const timerId = Date.now().toString();
             const medication = remMed;
             const action = remAction;
+            const minutesVal = minutes;
             
-            setActiveTimers(prev => [...prev, { id: timerId, target, action, medication }]);
+            setActiveTimers(prev => [...prev, { id: timerId, target, action, medication, minutes: minutesVal }]);
             
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.ready.then(registration => {
@@ -210,7 +194,7 @@ const App: React.FC = () => {
                         registration.active.postMessage({
                             type: 'SCHEDULE_NOTIFICATION',
                             title: "Health Assistant",
-                            body: `Tracey, you took ${medication}. It's time to: ${action}`,
+                            body: `Tracey, you took ${medication} ${minutesVal} minutes ago and now it's time to ${action}`,
                             delayMs: delayMs,
                             tag: timerId
                         });
@@ -429,13 +413,9 @@ const App: React.FC = () => {
                                     Assistant Reminder
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {notificationPermission !== 'granted' ? (
+                                    {notificationPermission !== 'granted' && (
                                         <button onClick={requestNotificationPermission} className="text-[10px] px-2 py-1 bg-brand-danger/10 text-brand-danger border border-brand-danger/20 rounded-full hover:bg-brand-danger/20 transition">
                                             Enable Notifications 🔔
-                                        </button>
-                                    ) : (
-                                        <button onClick={sendTestNotification} className="text-[10px] px-2 py-1 bg-brand-secondary/10 text-brand-secondary border border-brand-secondary/20 rounded-full hover:bg-brand-secondary/20 transition">
-                                            Test Alert ✅
                                         </button>
                                     )}
                                 </div>
