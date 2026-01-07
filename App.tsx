@@ -163,7 +163,10 @@ const App: React.FC = () => {
 
         setIsSettingReminder(true);
         try {
+            console.log(`Sending to Gemini: "I just took ${remMed}. Please set a reminder for me to ${remAction} in ${remTime} minutes."`);
             const response = await geminiService.setAssistantReminder(remMed, parseInt(remTime), remAction);
+            console.log("Raw Gemini Response:", response);
+            
             if (response.functionCalls && response.functionCalls.length > 0) {
                 for (const call of response.functionCalls) {
                     if (call.name === 'setReminder') {
@@ -171,9 +174,11 @@ const App: React.FC = () => {
                         const target = Date.now() + (minutes * 60 * 1000);
                         setActiveTimers(prev => [...prev, { id: Date.now().toString(), target, action }]);
                         setRemMed('');
-                        console.log(`Gemini Assistant set reminder for ${action} in ${minutes} minutes.`);
+                        console.log(`✅ SUCCESS: Gemini Assistant set reminder for ${action} in ${minutes} minutes.`);
                     }
                 }
+            } else {
+                console.warn("Gemini replied but did not trigger the setReminder function.");
             }
         } catch (error) {
             console.error("Reminder failed:", error);
