@@ -1,0 +1,5 @@
+{
+  "name": "Tracey's Health Journey",
+  "description": "A daily companion app for individuals with gastroparesis to log food intake, symptoms, and medications, while receiving AI-powered meal and exercise suggestions and symptom correlation analysis.",
+  "requestFramePermissions": []
+}
