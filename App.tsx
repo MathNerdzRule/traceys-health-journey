@@ -142,47 +142,6 @@ const App: React.FC = () => {
         }
     };
 
-    const testNotification = () => {
-        console.log('🔔 Testing notification...');
-        console.log('Permission status:', Notification.permission);
-        
-        if (Notification.permission !== 'granted') {
-            alert('Please enable notifications first!');
-            return;
-        }
-        
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then(reg => {
-                console.log('Service Worker ready, showing notification...');
-                reg.showNotification('Test Notification', {
-                    body: 'If you see this, notifications are working!',
-                    icon: '/vite.svg',
-                    requireInteraction: true
-                }).then(() => {
-                    console.log('✅ Notification shown successfully via SW');
-                }).catch(err => {
-                    console.error('❌ SW notification failed:', err);
-                    // Try direct notification
-                    try {
-                        new Notification('Test Notification', { body: 'Fallback notification' });
-                        console.log('✅ Direct notification shown');
-                    } catch (e) {
-                        console.error('❌ Direct notification also failed:', e);
-                    }
-                });
-            }).catch(err => {
-                console.error('❌ Service Worker not ready:', err);
-            });
-        } else {
-            try {
-                new Notification('Test Notification', { body: 'Direct notification (no SW)' });
-                console.log('✅ Direct notification shown (no SW)');
-            } catch (e) {
-                console.error('❌ Direct notification failed:', e);
-            }
-        }
-    };
-
     const today = getTodayDateString();
     const selectedDateLogs = allLogs[selectedDate] || [];
     const isFutureDate = selectedDate > today;
@@ -209,38 +168,28 @@ const App: React.FC = () => {
             setActiveTimers(prev => {
                 const expired = prev.filter(t => t.target <= now);
                 if (expired.length > 0) {
-                    console.log('⏰ Timer(s) expired:', expired.length);
                     expired.forEach(e => {
                         const message = `Tracey, you took ${e.medication || 'your meds'} ${e.minutes || 'some'} minutes ago and now it's time to ${e.action}`;
-                        console.log('Firing notification for:', message);
-                        console.log('Permission status:', Notification.permission);
                         
                         if (Notification.permission === "granted") {
                              if ('serviceWorker' in navigator) {
                                  navigator.serviceWorker.ready.then(reg => {
-                                     console.log('SW ready, calling showNotification...');
                                      reg.showNotification("Health Assistant", { 
                                         body: message,
                                         icon: '/vite.svg',
                                         badge: '/vite.svg',
                                         tag: e.id,
                                         requireInteraction: true
-                                     }).then(() => {
-                                        console.log('✅ SW notification fired!');
-                                     }).catch((err) => {
-                                        console.error('❌ SW notification failed:', err);
+                                     }).catch(() => {
                                         new Notification("Health Assistant", { body: message, icon: '/vite.svg' });
                                      });
-                                 }).catch(err => {
-                                     console.error('❌ SW not ready:', err);
+                                 }).catch(() => {
                                      new Notification("Health Assistant", { body: message, icon: '/vite.svg' });
                                  });
                              } else {
-                                 console.log('No SW, using direct notification');
                                  new Notification("Health Assistant", { body: message, icon: '/vite.svg' });
                              }
                         } else {
-                            console.log('Notifications not granted, using alert');
                             try {
                                 alert(`⏰ REMINDER: ${message}`);
                             } catch (e) {}
@@ -506,9 +455,6 @@ const App: React.FC = () => {
                                     Assistant Reminder
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <button onClick={testNotification} className="text-[10px] px-2 py-1 bg-brand-secondary/10 text-brand-secondary border border-brand-secondary/20 rounded-full hover:bg-brand-secondary/20 transition">
-                                        Test 🔔
-                                    </button>
                                     {notificationPermission !== 'granted' && (
                                         <button onClick={requestNotificationPermission} className="text-[10px] px-2 py-1 bg-brand-danger/10 text-brand-danger border border-brand-danger/20 rounded-full hover:bg-brand-danger/20 transition">
                                             Enable Notifications 🔔
