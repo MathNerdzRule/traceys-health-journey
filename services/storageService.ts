@@ -58,4 +58,28 @@ export const storageService = {
       console.error('Error saving doctor visits to localStorage', error);
     }
   },
+
+  exportAllData: (): string => {
+    const data = {
+      logs: storageService.getLogs(),
+      medications: storageService.getMedications(),
+      doctorVisits: storageService.getDoctorVisits(),
+      version: '1.0',
+      exportedAt: new Date().toISOString()
+    };
+    return JSON.stringify(data);
+  },
+
+  importAllData: (jsonData: string): boolean => {
+    try {
+      const data = JSON.parse(jsonData);
+      if (data.logs) storageService.saveLogs(data.logs);
+      if (data.medications) storageService.saveMedications(data.medications);
+      if (data.doctorVisits) storageService.saveDoctorVisits(data.doctorVisits);
+      return true;
+    } catch (error) {
+      console.error('Failed to import data:', error);
+      return false;
+    }
+  }
 };

@@ -7,6 +7,7 @@ import MedicationModal from './components/MedicationModal';
 import CorrelationModal from './components/CorrelationModal';
 import ShareModal from './components/ShareModal';
 import DoctorVisitsModal from './components/DoctorVisitsModal';
+import DataMigrationModal from './components/DataMigrationModal';
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
@@ -77,6 +78,7 @@ const App: React.FC = () => {
     const [isMedModalOpen, setIsMedModalOpen] = useState(false);
     const [isCorrelationModalOpen, setIsCorrelationModalOpen] = useState(false);
     const [isDoctorVisitsModalOpen, setIsDoctorVisitsModalOpen] = useState(false);
+    const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
     
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState('');
@@ -390,6 +392,12 @@ const App: React.FC = () => {
                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" /></svg>
                            Share History
                         </button>
+                        <button onClick={() => setIsMigrationModalOpen(true)} className="px-4 py-2 bg-orange-500 text-white rounded-lg shadow hover:bg-opacity-90 transition flex items-center gap-2">
+                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                           </svg>
+                           Transfer Data
+                        </button>
                     </div>
                 </header>
                 
@@ -543,6 +551,7 @@ const App: React.FC = () => {
             <DoctorVisitsModal isOpen={isDoctorVisitsModalOpen} onClose={() => setIsDoctorVisitsModalOpen(false)} visits={doctorVisits} onSave={handleSaveDoctorVisit} />
             <CorrelationModal isOpen={isCorrelationModalOpen} onClose={() => setIsCorrelationModalOpen(false)} isLoading={isAnalyzing} analysisResult={analysisResult} />
             <ShareModal isOpen={isShareModalOpen} onClose={handleCloseShareModal} shareType={shareModalType} medications={medications} allLogs={allLogs} />
+            <DataMigrationModal isOpen={isMigrationModalOpen} onClose={() => setIsMigrationModalOpen(false)} onImportSuccess={() => setAllLogs(storageService.getLogs())} />
         </div>
     );
 };
