@@ -169,18 +169,32 @@ const App: React.FC = () => {
                 const expired = prev.filter(t => t.target <= now);
                 if (expired.length > 0) {
                     expired.forEach(e => {
-                        // Foreground fallback: Use Service Worker for mobile compatibility
-                        if ('serviceWorker' in navigator && Notification.permission === "granted") {
-                             navigator.serviceWorker.ready.then(reg => {
-                                 reg.showNotification("Health Assistant", { 
-                                    body: `Tracey, you took ${e.medication} ${e.minutes} minutes ago and now it's time to ${e.action}`,
-                                    icon: '/vite.svg',
-                                    badge: '/vite.svg',
-                                    tag: e.id,
-                                    requireInteraction: true,
-                                    vibrate: [200, 100, 200]
-                                 }).catch(err => console.error("Notification crash prevented:", err));
-                             });
+                        const message = `Tracey, you took ${e.medication || 'your meds'} ${e.minutes || 'some'} minutes ago and now it's time to ${e.action}`;
+                        
+                        // Fallback 1: Local Alert (Wakes most phones if app is even slightly active)
+                        try {
+                            alert(`⏰ REMINDER: ${message}`);
+                        } catch (e) {}
+
+                        // Fallback 2: Browser Notification
+                        if ('Notification' in window && Notification.permission === "granted") {
+                             if ('serviceWorker' in navigator) {
+                                 navigator.serviceWorker.ready.then(reg => {
+                                     reg.showNotification("Health Assistant", { 
+                                        body: message,
+                                        icon: '/vite.svg',
+                                        badge: '/vite.svg',
+                                        tag: e.id,
+                                        requireInteraction: true,
+                                        vibrate: [200, 100, 200]
+                                     }).catch(err => console.error("Notification reg.show failed:", err));
+                                 }).catch(err => {
+                                     // Final fallback: Direct browser notification if SW ready fails
+                                     new Notification("Health Assistant", { body: message });
+                                 });
+                             } else {
+                                 new Notification("Health Assistant", { body: message });
+                             }
                         }
                     });
                     return prev.filter(t => t.target > now);
@@ -209,16 +223,17 @@ const App: React.FC = () => {
             const delayMs = minutes * 60 * 1000;
             const target = Date.now() + delayMs;
             const timerId = Date.now().toString();
-            const medication = remMed;
-            const action = remAction;
+            const medication = remMed || 'Medication';
+            const action = remAction || 'Next Step';
             const minutesVal = minutes;
             
             setActiveTimers(prev => [...prev, { id: timerId, target, action, medication, minutes: minutesVal }]);
             
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.ready.then(registration => {
-                    if (registration.active) {
-                        registration.active.postMessage({
+                    const worker = registration.active || registration.installing || registration.waiting;
+                    if (worker) {
+                        worker.postMessage({
                             type: 'SCHEDULE_NOTIFICATION',
                             title: "Health Assistant",
                             body: `Tracey, you took ${medication} ${minutesVal} minutes ago and now it's time to ${action}`,
