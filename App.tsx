@@ -94,7 +94,7 @@ const App: React.FC = () => {
     const [remTime, setRemTime] = useState('30');
     const [remAction, setRemAction] = useState('Eat my meal');
     const [isSettingReminder, setIsSettingReminder] = useState(false);
-    const [activeTimers, setActiveTimers] = useState<{ id: string; target: number; action: string }[]>(() => {
+    const [activeTimers, setActiveTimers] = useState<{ id: string; target: number; action: string; medication: string }[]>(() => {
         const saved = localStorage.getItem('active_health_timers');
         if (!saved) return [];
         const parsed = JSON.parse(saved);
@@ -163,7 +163,7 @@ const App: React.FC = () => {
                         if ('serviceWorker' in navigator && Notification.permission === "granted") {
                              navigator.serviceWorker.ready.then(reg => {
                                  reg.showNotification("Health Assistant", { 
-                                    body: `Tracey, it's time to: ${e.action}`,
+                                    body: `Tracey, you took ${e.medication}. It's time to: ${e.action}`,
                                     icon: '/vite.svg',
                                     badge: '/vite.svg',
                                     tag: e.id,
@@ -192,49 +192,36 @@ const App: React.FC = () => {
         }
 
         setIsSettingReminder(true);
-        try {
-            console.log(`Sending to Gemini: "I just took ${remMed}. Please set a reminder for me to ${remAction} in ${remTime} minutes."`);
-            const response = await geminiService.setAssistantReminder(remMed, parseInt(remTime), remAction);
-            console.log("Raw Gemini Response:", response);
+        
+        // Instant local creation for reliability (bypassing AI latency as requested)
+        setTimeout(() => {
+            const minutes = parseInt(remTime) || 30;
+            const delayMs = minutes * 60 * 1000;
+            const target = Date.now() + delayMs;
+            const timerId = Date.now().toString();
+            const medication = remMed;
+            const action = remAction;
             
-            if (response.functionCalls && response.functionCalls.length > 0) {
-                for (const call of response.functionCalls) {
-                    if (call.name === 'setReminder') {
-                        const { action, minutes } = call.args;
-                        const delayMs = minutes * 60 * 1000;
-                        const target = Date.now() + delayMs;
-                        const timerId = Date.now().toString();
-                        
-                        setActiveTimers(prev => [...prev, { id: timerId, target, action }]);
-                        
-                        // Send message to Service Worker for background handling
-                        if ('serviceWorker' in navigator) {
-                            navigator.serviceWorker.ready.then(registration => {
-                                if (registration.active) {
-                                    registration.active.postMessage({
-                                        type: 'SCHEDULE_NOTIFICATION',
-                                        title: "Health Assistant",
-                                        body: `Tracey, it's time to: ${action}`,
-                                        delayMs: delayMs,
-                                        tag: timerId
-                                    });
-                                }
-                            });
-                        }
-                        
-                        setRemMed('');
-                        console.log(`✅ SUCCESS: Gemini Assistant set internal timer for ${action} in ${minutes} minutes.`);
+            setActiveTimers(prev => [...prev, { id: timerId, target, action, medication }]);
+            
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(registration => {
+                    if (registration.active) {
+                        registration.active.postMessage({
+                            type: 'SCHEDULE_NOTIFICATION',
+                            title: "Health Assistant",
+                            body: `Tracey, you took ${medication}. It's time to: ${action}`,
+                            delayMs: delayMs,
+                            tag: timerId
+                        });
                     }
-                }
-            } else {
-                console.warn("Gemini replied but did not trigger the setReminder function.");
+                });
             }
-        } catch (error) {
-            console.error("Reminder failed:", error);
-            alert("Assistant is having trouble connecting. Check your API key.");
-        } finally {
+            
+            setRemMed('');
+            console.log(`✅ SUCCESS: Local reminder set for ${action} in ${minutes} minutes.`);
             setIsSettingReminder(false);
-        }
+        }, 300); // Tiny delay for UI feel
     };
 
     const adjustDate = (dateString: string, days: number): string => {
@@ -479,7 +466,7 @@ const App: React.FC = () => {
                                     {isSettingReminder ? (
                                         <>
                                             <div className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full"></div>
-                                            <span>Asking Gemini...</span>
+                                            <span>Creating Reminder...</span>
                                         </>
                                     ) : (
                                         <>
