@@ -120,10 +120,15 @@ const App: React.FC = () => {
     };
 
     const sendTestNotification = () => {
-        if (Notification.permission === 'granted') {
-            new Notification("Test Reminder", { body: "This is what your health alerts will look like!" });
+        if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.showNotification("Success! ✅", { 
+                    body: "Tracey, this is your health companion working locally on your device.",
+                    vibrate: [200, 100, 200]
+                });
+            });
         } else {
-            alert("Please enable notifications first.");
+            requestNotificationPermission();
         }
     };
 
@@ -154,13 +159,18 @@ const App: React.FC = () => {
                 const expired = prev.filter(t => t.target <= now);
                 if (expired.length > 0) {
                     expired.forEach(e => {
-                        // Foreground fallback: If the page is even slightly active, this will fire
-                        if (Notification.permission === "granted") {
-                             new Notification("Health Assistant", { 
-                                body: `Tracey, it's time to: ${e.action}`,
-                                icon: '/vite.svg',
-                                requireInteraction: true
-                            });
+                        // Foreground fallback: Use Service Worker for mobile compatibility
+                        if ('serviceWorker' in navigator && Notification.permission === "granted") {
+                             navigator.serviceWorker.ready.then(reg => {
+                                 reg.showNotification("Health Assistant", { 
+                                    body: `Tracey, it's time to: ${e.action}`,
+                                    icon: '/vite.svg',
+                                    badge: '/vite.svg',
+                                    tag: e.id,
+                                    requireInteraction: true,
+                                    vibrate: [200, 100, 200]
+                                 }).catch(err => console.error("Notification crash prevented:", err));
+                             });
                         }
                     });
                     return prev.filter(t => t.target > now);
