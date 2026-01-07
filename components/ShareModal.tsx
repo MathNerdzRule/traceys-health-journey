@@ -8,6 +8,7 @@ interface ShareModalProps {
   shareType: 'medications' | 'history' | null;
   medications?: Medication[];
   allLogs?: DailyLogs;
+  onImportClick: () => void;
 }
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
@@ -79,7 +80,7 @@ const formatLogHistoryData = (logs: DailyLogs, startDate: string, endDate: strin
   return content;
 };
 
-const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, shareType, medications, allLogs }) => {
+const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, shareType, medications, allLogs, onImportClick }) => {
   const [formattedData, setFormattedData] = useState('');
   const [copySuccess, setCopySuccess] = useState('');
 
@@ -152,6 +153,22 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, shareType, med
              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" /><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" /></svg>
             Copy to Clipboard
           </button>
+          
+          {shareType === 'history' && (
+            <button 
+                onClick={() => {
+                    onClose();
+                    onImportClick();
+                }} 
+                className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-opacity-90 transition flex items-center gap-2"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Import
+            </button>
+          )}
+
           {copySuccess && <span className="text-brand-secondary font-semibold">{copySuccess}</span>}
         </div>
       </div>
