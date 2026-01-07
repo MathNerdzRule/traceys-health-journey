@@ -15,16 +15,19 @@ const DataMigrationModal: React.FC<DataMigrationModalProps> = ({ isOpen, onClose
   const handleImport = () => {
     try {
       if (!importText.trim()) return;
-      const success = storageService.importAllData(importText);
+      
+      // Attempt to parse the data
+      const success = storageService.importAllData(importText.trim());
+      
       if (success) {
-        setStatus({ type: 'success', message: 'Data imported! Refreshing...' });
+        setStatus({ type: 'success', message: 'History imported! Refreshing...' });
         setTimeout(() => {
           onImportSuccess();
           onClose();
           window.location.reload();
         }, 1000);
       } else {
-        setStatus({ type: 'error', message: 'Invalid data. Try copying it again.' });
+        setStatus({ type: 'error', message: 'Invalid format. Make sure you copied the correct data.' });
       }
     } catch (err) {
       setStatus({ type: 'error', message: 'Import failed.' });
@@ -32,40 +35,30 @@ const DataMigrationModal: React.FC<DataMigrationModalProps> = ({ isOpen, onClose
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Transfer Data from Old Site">
+    <Modal isOpen={isOpen} onClose={onClose} title="Import Health History">
       <div className="space-y-6">
-        <section className="bg-orange-50 p-4 rounded-lg border border-orange-100">
-          <h3 className="font-bold text-orange-800 mb-2">Step 1: Get data from the OLD site</h3>
-          <p className="text-sm text-orange-700 mb-4">
-            Since your phone keeps data separate for different sites, you'll need to open your old site with this special link:
-          </p>
-          <div className="p-3 bg-white border rounded border-orange-200 text-[10px] font-mono break-all mb-4 select-all">
-            https://tracey-s-health-journey-xxxx.us-west1.run.app/?export=true
-          </div>
-          <p className="text-[10px] text-orange-600 italic">
-            Instructions: Open your old site, add <b>?export=true</b> to the end of the URL, tap the big "Copy" button that appears, then come back here.
-          </p>
-        </section>
+        <p className="text-sm text-gray-600">
+          Paste the history data you copied from the old site below to transfer your logs and medications.
+        </p>
 
         <section>
-          <h3 className="font-bold text-gray-800 mb-2">Step 2: Paste data here</h3>
           <textarea
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
-            placeholder="Paste the data code here..."
-            className="w-full h-32 p-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none text-xs font-mono"
+            placeholder="Paste copied data here..."
+            className="w-full h-48 p-4 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-brand-primary outline-none text-xs font-mono"
           />
           <button
             onClick={handleImport}
             disabled={!importText.trim()}
-            className="w-full mt-4 py-3 bg-brand-secondary text-white rounded-lg font-bold hover:bg-opacity-90 transition disabled:bg-gray-300"
+            className="w-full mt-4 py-4 bg-brand-primary text-white rounded-xl font-bold hover:bg-opacity-90 shadow-lg transition disabled:bg-gray-300"
           >
-            Import Data
+            Confirm Import
           </button>
         </section>
 
         {status.type !== 'idle' && (
-          <div className={`p-3 rounded-lg text-sm text-center ${status.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          <div className={`p-4 rounded-xl text-sm text-center font-medium ${status.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
             {status.message}
           </div>
         )}

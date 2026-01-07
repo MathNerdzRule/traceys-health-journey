@@ -389,42 +389,50 @@ const App: React.FC = () => {
     return (
         <div className="min-h-screen text-brand-text-primary p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
-                <header className="mb-8">
-                    <h1 className="text-4xl font-bold text-brand-text-primary">Tracey's Health Journey</h1>
-                    <p className="text-brand-text-secondary mt-1">A daily companion for managing health and gastroparesis.</p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                        <button onClick={() => setIsMedModalOpen(true)} className="px-4 py-2 bg-brand-primary text-white rounded-lg shadow hover:bg-opacity-90 transition flex items-center gap-2">
-                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M10 2a5 5 0 015 5v6a5 5 0 01-10 0V7a5 5 0 015-5z" />
-                                <path fillRule="evenodd" d="M10 4a3 3 0 00-3 3v6a3 3 0 006 0V7a3 3 0 00-3-3z" clipRule="evenodd" />
-                           </svg>
-                           My Meds
-                        </button>
-                        <button onClick={() => setIsDoctorVisitsModalOpen(true)} className="px-4 py-2 bg-purple-500 text-white rounded-lg shadow hover:bg-opacity-90 transition flex items-center gap-2">
-                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12h.01" />
-                           </svg>
-                           Doctor Visits
-                        </button>
-                        <button onClick={handleAnalyzeSymptoms} disabled={!isApiKeySet} className="px-4 py-2 bg-brand-accent text-white rounded-lg shadow hover:bg-opacity-90 transition disabled:bg-gray-400 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-4xl font-bold text-brand-text-primary">Tracey's Health Journey</h1>
+                        <button 
+                            onClick={() => setIsMigrationModalOpen(true)}
+                            title="Import History"
+                            className="p-2 bg-brand-primary/10 text-brand-primary rounded-full hover:bg-brand-primary/20 transition active:scale-95 shadow-sm"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                             </svg>
-                            Analyze Symptoms
                         </button>
+                    </div>
+                    <div className="flex items-center gap-3">
                         <button onClick={() => handleOpenShareModal('history')} className="px-4 py-2 bg-gray-600 text-white rounded-lg shadow hover:bg-opacity-90 transition flex items-center gap-2">
                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" /></svg>
                            Share History
                         </button>
-                        <button onClick={() => setIsMigrationModalOpen(true)} className="px-4 py-2 bg-orange-500 text-white rounded-lg shadow hover:bg-opacity-90 transition flex items-center gap-2">
-                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                           </svg>
-                           Transfer Data
-                        </button>
                     </div>
                 </header>
+                
+                <p className="text-brand-text-secondary mt-1 mb-4">A daily companion for managing health and gastroparesis.</p>
+                <div className="mt-4 flex flex-wrap gap-2 mb-8">
+                    <button onClick={() => setIsMedModalOpen(true)} className="px-4 py-2 bg-brand-primary text-white rounded-lg shadow hover:bg-opacity-90 transition flex items-center gap-2">
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 2a5 5 0 015 5v6a5 5 0 01-10 0V7a5 5 0 015-5z" />
+                            <path fillRule="evenodd" d="M10 4a3 3 0 00-3 3v6a3 3 0 006 0V7a3 3 0 00-3-3z" clipRule="evenodd" />
+                       </svg>
+                       My Meds
+                    </button>
+                    <button onClick={() => setIsDoctorVisitsModalOpen(true)} className="px-4 py-2 bg-purple-500 text-white rounded-lg shadow hover:bg-opacity-90 transition flex items-center gap-2">
+                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12h.01" />
+                       </svg>
+                       Doctor Visits
+                    </button>
+                    <button onClick={handleAnalyzeSymptoms} disabled={!isApiKeySet} className="px-4 py-2 bg-brand-accent text-white rounded-lg shadow hover:bg-opacity-90 transition disabled:bg-gray-400 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                        </svg>
+                        Analyze Symptoms
+                    </button>
+                </div>
                 
                 <div className="bg-brand-surface p-4 rounded-xl shadow-md mb-8 flex flex-wrap items-center justify-center gap-4">
                     <button onClick={handlePreviousDay} className="px-4 py-2 bg-brand-primary-light text-brand-text-primary rounded-lg shadow hover:bg-brand-primary/50 transition">&larr; Previous Day</button>

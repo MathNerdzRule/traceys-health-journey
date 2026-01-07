@@ -1,4 +1,4 @@
-import { DailyLogs, Medication, DoctorVisit } from '../types';
+import { DailyLogs, Medication, DoctorVisit, LogEntry, LogType } from '../types';
 
 const LOGS_KEY = 'gpJourneyLogs';
 const MEDS_KEY = 'gpJourneyMeds';
@@ -78,7 +78,77 @@ export const storageService = {
       if (data.doctorVisits) storageService.saveDoctorVisits(data.doctorVisits);
       return true;
     } catch (error) {
-      console.error('Failed to import data:', error);
+      // If direct JSON fails, try parsing 'Share History' text format
+      return storageService.importFromShareText(jsonData);
+    }
+  },
+
+  importFromShareText: (text: string): boolean => {
+    try {
+      const logs: DailyLogs = {};
+      const meds: Medication[] = [];
+      
+      // Basic check if it's our format
+      if (!text.includes('Health Log History') && !text.includes('Medication List')) return false;
+
+      if (text.includes('Medication List')) {
+        const lines = text.split('\n');
+        let currentMed: any = null;
+        lines.forEach(line => {
+          if (line.startsWith('- ')) {
+            if (currentMed) meds.push(currentMed);
+            currentMed = { id: Date.now().toString() + Math.random(), name: line.substring(2).trim(), dosage: '', frequency: '' };
+          } else if (line.includes('Dosage: ')) {
+            if (currentMed) currentMed.dosage = line.split('Dosage: ')[1].trim();
+          } else if (line.includes('Frequency: ')) {
+            if (currentMed) currentMed.frequency = line.split('Frequency: ')[1].trim();
+          }
+        });
+        if (currentMed) meds.push(currentMed);
+        if (meds.length > 0) storageService.saveMedications(meds);
+      }
+
+      if (text.includes('Health Log History')) {
+        const daySections = text.split(/--- (.*?) ---/g);
+        // [0] is header, [1] is first date display string, [2] is content for [1], etc.
+        for (let i = 1; i < daySections.length; i += 2) {
+          const displayDate = daySections[i];
+          const content = daySections[i+1];
+          
+          // Convert "Monday, January 6, 2026" back to "2026-01-06"
+          const date = new Date(displayDate);
+          if (isNaN(date.getTime())) continue;
+          const dateStr = date.toISOString().split('T')[0];
+          
+          const dailyEntries: LogEntry[] = [];
+          const typeGroups = content.split(/\[(.*?)\]/g);
+          
+          for (let j = 1; j < typeGroups.length; j += 2) {
+            const type = typeGroups[j] as LogType;
+            const entriesText = typeGroups[j+1];
+            const entries = entriesText.split('\n- ');
+            
+            entries.forEach(entry => {
+              const match = entry.match(/\((.*?)\)\s(.*)/);
+              if (match) {
+                dailyEntries.push({
+                  id: Math.random().toString(36).substr(2, 9),
+                  timestamp: match[1],
+                  type: type,
+                  content: match[2].trim()
+                });
+              }
+            });
+          }
+          if (dailyEntries.length > 0) {
+            logs[dateStr] = dailyEntries;
+          }
+        }
+        if (Object.keys(logs).length > 0) storageService.saveLogs(logs);
+      }
+      return true;
+    } catch (err) {
+      console.error('Failed to parse share text:', err);
       return false;
     }
   }
