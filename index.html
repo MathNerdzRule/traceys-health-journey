@@ -11,60 +11,43 @@
         theme: {
           extend: {
             colors: {
-              'brand-surface': '#FFFFFF',
-              'brand-primary': '#3498DB',
-              'brand-primary-light': '#AED6F1',
-              'brand-secondary': '#2ECC71',
-              'brand-accent': '#F39C12',
-              'brand-text-primary': '#2C3E50',
-              'brand-text-secondary': '#5D6D7E',
-              'brand-danger': '#E74C3C',
+              "brand-surface": "#FFFFFF",
+              "brand-primary": "#3498DB",
+              "brand-primary-light": "#AED6F1",
+              "brand-secondary": "#2ECC71",
+              "brand-accent": "#F39C12",
+              "brand-text-primary": "#2C3E50",
+              "brand-text-secondary": "#5D6D7E",
+              "brand-danger": "#E74C3C",
             },
           },
         },
+      };
+    </script>
+    <script type="importmap">
+      {
+        "imports": {
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+          "react/": "https://aistudiocdn.com/react@^19.2.0/",
+          "react": "https://aistudiocdn.com/react@^19.2.0",
+          "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0"
+        }
       }
     </script>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="stylesheet" href="/index.css" />
+  </head>
   <body class="bg-slate-50">
     <div id="root"></div>
     <script>
-      // Register simple service worker for background notifications
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          const swCode = `
-            self.addEventListener('install', (event) => {
-              self.skipWaiting();
-            });
-            self.addEventListener('activate', (event) => {
-              event.waitUntil(self.clients.claim());
-            });
-            self.addEventListener('push', (event) => {
-              const data = event.data.json();
-              self.registration.showNotification(data.title, {
-                body: data.body,
-                icon: '/vite.svg'
-              });
-            });
-          `;
-          const blob = new Blob([swCode], { type: 'application/javascript' });
-          const swUrl = URL.createObjectURL(blob);
-          navigator.serviceWorker.register(swUrl).then(reg => {
-            console.log('Background Assistant Registered');
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js").then((reg) => {
+            console.log("Background Assistant Active");
           });
         });
       }
     </script>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>

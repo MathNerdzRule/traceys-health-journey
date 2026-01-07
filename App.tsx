@@ -94,7 +94,16 @@ const App: React.FC = () => {
     const [remTime, setRemTime] = useState('30');
     const [remAction, setRemAction] = useState('Eat my meal');
     const [isSettingReminder, setIsSettingReminder] = useState(false);
-    const [activeTimers, setActiveTimers] = useState<{ id: string; target: number; action: string }[]>([]);
+    const [activeTimers, setActiveTimers] = useState<{ id: string; target: number; action: string }[]>(() => {
+        const saved = localStorage.getItem('active_health_timers');
+        if (!saved) return [];
+        const parsed = JSON.parse(saved);
+        return parsed.filter((t: any) => t.target > Date.now());
+    });
+
+    useEffect(() => {
+        localStorage.setItem('active_health_timers', JSON.stringify(activeTimers));
+    }, [activeTimers]);
 
     const today = getTodayDateString();
     const selectedDateLogs = allLogs[selectedDate] || [];
@@ -115,37 +124,13 @@ const App: React.FC = () => {
         if (isApiKeySet) fetchSuggestions();
     }, [isApiKeySet]);
 
-    // Background Timer logic
+    // UI-only Timer refresh logic
     useEffect(() => {
         const interval = setInterval(() => {
             const now = Date.now();
             setActiveTimers(prev => {
                 const updated = prev.filter(t => t.target > now);
-                if (updated.length !== prev.length) {
-                    const expired = prev.filter(t => t.target <= now);
-                    expired.forEach(e => {
-                        if ('serviceWorker' in navigator && Notification.permission === 'granted') {
-                            navigator.serviceWorker.ready.then(registration => {
-                                registration.showNotification("Health Assistant", {
-                                    body: `Tracey, it's time to: ${e.action}`,
-                                    icon: '/vite.svg',
-                                    badge: '/vite.svg',
-                                    vibrate: [200, 100, 200, 100, 200],
-                                    tag: e.id,
-                                    renotify: true
-                                } as any);
-                            });
-                        } else if (Notification.permission === "granted") {
-                            new Notification("Health Assistant", { 
-                                body: `Tracey, it's time to: ${e.action}`,
-                                icon: '/vite.svg'
-                            });
-                        } else {
-                            alert(`Health Assistant: Time to ${e.action}!`);
-                        }
-                    });
-                }
-                return updated;
+                return updated.length !== prev.length ? updated : prev;
             });
         }, 1000);
         return () => clearInterval(interval);
@@ -171,10 +156,25 @@ const App: React.FC = () => {
                 for (const call of response.functionCalls) {
                     if (call.name === 'setReminder') {
                         const { action, minutes } = call.args;
-                        const target = Date.now() + (minutes * 60 * 1000);
-                        setActiveTimers(prev => [...prev, { id: Date.now().toString(), target, action }]);
+                        const delayMs = minutes * 60 * 1000;
+                        const target = Date.now() + delayMs;
+                        const timerId = Date.now().toString();
+                        
+                        setActiveTimers(prev => [...prev, { id: timerId, target, action }]);
+                        
+                        // Send message to Service Worker for background handling
+                        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                            navigator.serviceWorker.controller.postMessage({
+                                type: 'SCHEDULE_NOTIFICATION',
+                                title: "Health Assistant",
+                                body: `Tracey, it's time to: ${action}`,
+                                delayMs: delayMs,
+                                tag: timerId
+                            });
+                        }
+                        
                         setRemMed('');
-                        console.log(`✅ SUCCESS: Gemini Assistant set reminder for ${action} in ${minutes} minutes.`);
+                        console.log(`✅ SUCCESS: Gemini Assistant set internal timer for ${action} in ${minutes} minutes.`);
                     }
                 }
             } else {
