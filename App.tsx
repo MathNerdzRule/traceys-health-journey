@@ -80,6 +80,31 @@ const App: React.FC = () => {
     const [isDoctorVisitsModalOpen, setIsDoctorVisitsModalOpen] = useState(false);
     const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
     
+    // Mobile Export Detection
+    const isExportMode = window.location.search.includes('export=true');
+
+    const copyMobileData = () => {
+        const data = storageService.exportAllData();
+        navigator.clipboard.writeText(data);
+        alert("Data copied! Now go back to the NEW app and paste it.");
+    };
+
+    if (isExportMode) {
+        return (
+            <div className="min-h-screen bg-brand-primary p-8 flex flex-col items-center justify-center text-center text-white">
+                <h1 className="text-3xl font-bold mb-4">Export Tracey's Data</h1>
+                <p className="mb-8 opacity-90">Tap the button below to copy all your health history from this old version.</p>
+                <button 
+                    onClick={copyMobileData}
+                    className="w-full max-w-xs py-4 bg-white text-brand-primary rounded-2xl font-black shadow-2xl active:scale-95 transition-transform text-lg"
+                >
+                    📋 COPY MY DATA
+                </button>
+                <p className="mt-8 text-xs opacity-70">After tapping, open the new app and paste the data into the Transfer section.</p>
+            </div>
+        );
+    }
+    
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState('');
     

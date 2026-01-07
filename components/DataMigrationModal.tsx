@@ -12,57 +12,38 @@ const DataMigrationModal: React.FC<DataMigrationModalProps> = ({ isOpen, onClose
   const [importText, setImportText] = useState('');
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
 
-  const extractorCode = `
-const data = {
-  logs: JSON.parse(localStorage.getItem('gpJourneyLogs') || '{}'),
-  medications: JSON.parse(localStorage.getItem('gpJourneyMeds') || '[]'),
-  doctorVisits: JSON.parse(localStorage.getItem('gpJourneyDocVisits') || '[]')
-};
-console.log(JSON.stringify(data));
-copy(JSON.stringify(data));
-alert('Data copied to clipboard! Paste it into the new app.');
-  `.trim();
-
   const handleImport = () => {
     try {
       if (!importText.trim()) return;
       const success = storageService.importAllData(importText);
       if (success) {
-        setStatus({ type: 'success', message: 'Data imported successfully! The page will refresh.' });
+        setStatus({ type: 'success', message: 'Data imported! Refreshing...' });
         setTimeout(() => {
           onImportSuccess();
           onClose();
           window.location.reload();
-        }, 1500);
+        }, 1000);
       } else {
-        setStatus({ type: 'error', message: 'Invalid data format. Please try again.' });
+        setStatus({ type: 'error', message: 'Invalid data. Try copying it again.' });
       }
     } catch (err) {
-      setStatus({ type: 'error', message: 'Import failed. Make sure you copied the correct text.' });
+      setStatus({ type: 'error', message: 'Import failed.' });
     }
-  };
-
-  const copyExtractor = () => {
-    navigator.clipboard.writeText(extractorCode);
-    alert('Extractor code copied! Run this in the console of your OLD site.');
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Transfer Data from Old Site">
       <div className="space-y-6">
-        <section className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-          <h3 className="font-bold text-blue-800 mb-2">Step 1: Get data from old site</h3>
-          <p className="text-sm text-blue-700 mb-4">
-            Since your browser keeps data separate for different websites, you'll need to run a small command on the old site to "extract" your data.
+        <section className="bg-orange-50 p-4 rounded-lg border border-orange-100">
+          <h3 className="font-bold text-orange-800 mb-2">Step 1: Get data from the OLD site</h3>
+          <p className="text-sm text-orange-700 mb-4">
+            Since your phone keeps data separate for different sites, you'll need to open your old site with this special link:
           </p>
-          <button 
-            onClick={copyExtractor}
-            className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-          >
-            Copy Extractor Code
-          </button>
-          <p className="text-[10px] mt-2 text-blue-500 italic">
-            Instructions: Go to your old site, right-click anywhere, select "Inspect", go to the "Console" tab, paste this code, and hit Enter.
+          <div className="p-3 bg-white border rounded border-orange-200 text-[10px] font-mono break-all mb-4 select-all">
+            https://tracey-s-health-journey-xxxx.us-west1.run.app/?export=true
+          </div>
+          <p className="text-[10px] text-orange-600 italic">
+            Instructions: Open your old site, add <b>?export=true</b> to the end of the URL, tap the big "Copy" button that appears, then come back here.
           </p>
         </section>
 
