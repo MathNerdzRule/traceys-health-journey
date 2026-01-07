@@ -100,10 +100,32 @@ const App: React.FC = () => {
         const parsed = JSON.parse(saved);
         return parsed.filter((t: any) => t.target > Date.now());
     });
+    const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
+        typeof Notification !== 'undefined' ? Notification.permission : 'default'
+    );
 
     useEffect(() => {
         localStorage.setItem('active_health_timers', JSON.stringify(activeTimers));
     }, [activeTimers]);
+
+    const requestNotificationPermission = async () => {
+        if ('Notification' in window) {
+            const permission = await Notification.requestPermission();
+            setNotificationPermission(permission);
+            if (permission === 'granted') {
+                // Register a test notification to confirm
+                new Notification("Notifications Enabled!", { body: "You will now receive health reminders." });
+            }
+        }
+    };
+
+    const sendTestNotification = () => {
+        if (Notification.permission === 'granted') {
+            new Notification("Test Reminder", { body: "This is what your health alerts will look like!" });
+        } else {
+            alert("Please enable notifications first.");
+        }
+    };
 
     const today = getTodayDateString();
     const selectedDateLogs = allLogs[selectedDate] || [];
@@ -124,13 +146,26 @@ const App: React.FC = () => {
         if (isApiKeySet) fetchSuggestions();
     }, [isApiKeySet]);
 
-    // UI-only Timer refresh logic
+    // UI-only Timer refresh logic + Foreground Notification Fallback
     useEffect(() => {
         const interval = setInterval(() => {
             const now = Date.now();
             setActiveTimers(prev => {
-                const updated = prev.filter(t => t.target > now);
-                return updated.length !== prev.length ? updated : prev;
+                const expired = prev.filter(t => t.target <= now);
+                if (expired.length > 0) {
+                    expired.forEach(e => {
+                        // Foreground fallback: If the page is even slightly active, this will fire
+                        if (Notification.permission === "granted") {
+                             new Notification("Health Assistant", { 
+                                body: `Tracey, it's time to: ${e.action}`,
+                                icon: '/vite.svg',
+                                requireInteraction: true
+                            });
+                        }
+                    });
+                    return prev.filter(t => t.target > now);
+                }
+                return prev;
             });
         }, 1000);
         return () => clearInterval(interval);
@@ -163,13 +198,17 @@ const App: React.FC = () => {
                         setActiveTimers(prev => [...prev, { id: timerId, target, action }]);
                         
                         // Send message to Service Worker for background handling
-                        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                            navigator.serviceWorker.controller.postMessage({
-                                type: 'SCHEDULE_NOTIFICATION',
-                                title: "Health Assistant",
-                                body: `Tracey, it's time to: ${action}`,
-                                delayMs: delayMs,
-                                tag: timerId
+                        if ('serviceWorker' in navigator) {
+                            navigator.serviceWorker.ready.then(registration => {
+                                if (registration.active) {
+                                    registration.active.postMessage({
+                                        type: 'SCHEDULE_NOTIFICATION',
+                                        title: "Health Assistant",
+                                        body: `Tracey, it's time to: ${action}`,
+                                        delayMs: delayMs,
+                                        tag: timerId
+                                    });
+                                }
                             });
                         }
                         
@@ -387,11 +426,24 @@ const App: React.FC = () => {
                             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-32 w-32" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0012 18.75c-1.03 0-1.959-.44-2.615-1.141l-.547-.547z" /></svg>
                             </div>
-                            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-brand-primary">
-                                <span className="p-1.5 bg-brand-primary/10 rounded-lg">✨</span>
-                                Assistant Reminder
+                            <h2 className="text-2xl font-bold mb-2 flex items-center justify-between gap-2 text-brand-primary">
+                                <div className="flex items-center gap-2">
+                                    <span className="p-1.5 bg-brand-primary/10 rounded-lg">✨</span>
+                                    Assistant Reminder
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {notificationPermission !== 'granted' ? (
+                                        <button onClick={requestNotificationPermission} className="text-[10px] px-2 py-1 bg-brand-danger/10 text-brand-danger border border-brand-danger/20 rounded-full hover:bg-brand-danger/20 transition">
+                                            Enable Notifications 🔔
+                                        </button>
+                                    ) : (
+                                        <button onClick={sendTestNotification} className="text-[10px] px-2 py-1 bg-brand-secondary/10 text-brand-secondary border border-brand-secondary/20 rounded-full hover:bg-brand-secondary/20 transition">
+                                            Test Alert ✅
+                                        </button>
+                                    )}
+                                </div>
                             </h2>
-                            <p className="text-sm text-brand-text-secondary mb-6">Tracey, use this to set smart medical timers. These work even after you close the app.</p>
+                            <p className="text-sm text-brand-text-secondary mb-6">Tracey, use this to set smart medical timers. These work best if you "Add to Home Screen."</p>
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                                 <div className="space-y-1">
