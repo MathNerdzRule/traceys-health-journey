@@ -1,7 +1,7 @@
 import { GoogleGenAI, GenerateContentResponse, Type, FunctionDeclaration } from '@google/genai';
 import { DailyLogs } from '../types';
 
-const MODEL_NAME = 'gemini-flash-latest';
+const MODEL_NAME = 'gemini-3-flash-preview';
 
 const DIET_INFO = `
 Gastroparesis is a disorder in which the stomach takes too long to move food into the small intestines. This can cause nausea, vomiting, weight loss, poor appetite, reflux, bloating, abdominal discomfort, and early satiety.
